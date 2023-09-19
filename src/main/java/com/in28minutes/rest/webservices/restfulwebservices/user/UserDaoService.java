@@ -11,7 +11,7 @@ import java.util.function.Predicate;
 @Component
 public class UserDaoService {
     private static List<User> users = new ArrayList<>();
-    private static int userCount = 1;
+    private static int userCount = 0;
 
 
     static {
