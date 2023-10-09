@@ -2,6 +2,7 @@
 package com.in28minutes.rest.webservices.restfulwebservices.user;
 
 import com.in28minutes.rest.webservices.restfulwebservices.jpa.UserRepository;
+import com.in28minutes.rest.webservices.restfulwebservices.postjpa.PostRepository;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
@@ -18,14 +19,16 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RestController
 public class UserJpaResourceController {
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
 
 
-    public UserJpaResourceController( UserRepository userRepository) {
+    public UserJpaResourceController( UserRepository userRepository,PostRepository postRepository ) {
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
     }
 
     @GetMapping("/jpa/users")
-    public List<User> retrieveAllUsers() {
+    public List< User> retrieveAllUsers() {
         return userRepository.findAll();
     }
 
@@ -59,4 +62,29 @@ public class UserJpaResourceController {
          userRepository.deleteById(id);
     }
 
+    @GetMapping("/jpa/users/{id}/posts")
+    public List<Post> retrievePostsForUser(@PathVariable int id) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.isEmpty())
+            throw new TheUserNotFoundException("id: "+ id);
+        return user.get().getPosts();
     }
+    @PostMapping("/jpa/users/{id}/posts")
+    public ResponseEntity<Object> createPostsForUser(@PathVariable int id, @RequestBody Post posts) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.isEmpty())
+            throw new TheUserNotFoundException("id: "+ id);
+           posts.setUser(user.get());
+           Post savedPost = postRepository.save(posts);
+           URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/id")
+                .buildAndExpand(savedPost.getId())
+                .toUri();
+        return ResponseEntity.created(location).build();
+
+
+
+    }
+
+}
